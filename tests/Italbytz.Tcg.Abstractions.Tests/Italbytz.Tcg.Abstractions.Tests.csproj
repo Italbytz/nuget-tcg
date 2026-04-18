@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Italbytz.Tcg.Abstractions\Italbytz.Tcg.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Italbytz.Tcg.InMemory\Italbytz.Tcg.InMemory.csproj" />
+  </ItemGroup>
+
+</Project>

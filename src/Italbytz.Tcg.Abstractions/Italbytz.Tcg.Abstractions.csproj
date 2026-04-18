@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <PackageId>Italbytz.Tcg.Abstractions</PackageId>
+    <Description>Game-agnostic abstractions for TCG cards, sets, sources, and repositories.</Description>
+  </PropertyGroup>
+
+</Project>

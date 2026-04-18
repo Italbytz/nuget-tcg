@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Italbytz.Tcg.Abstractions\Italbytz.Tcg.Abstractions.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <PackageId>Italbytz.Tcg.InMemory</PackageId>
+    <Description>In-memory repository implementations for the Italbytz TCG abstractions.</Description>
+  </PropertyGroup>
+
+</Project>
