@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Italbytz.Tcg.Abstractions\Italbytz.Tcg.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Italbytz.Tcg.InMemory\Italbytz.Tcg.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\Italbytz.Tcg.Scryfall\Italbytz.Tcg.Scryfall.csproj" />
   </ItemGroup>
 
 </Project>

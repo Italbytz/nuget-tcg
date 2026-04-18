@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Italbytz.Tcg.Abstractions\Italbytz.Tcg.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <PackageId>Italbytz.Tcg.Scryfall</PackageId>
+    <Description>Scryfall client mapped to the Italbytz TCG abstractions.</Description>
+  </PropertyGroup>
+
+</Project>

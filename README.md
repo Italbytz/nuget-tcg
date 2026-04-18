@@ -29,6 +29,10 @@ Common domain classes and contracts for cards, sets, sources, and repositories.
 
 HTTP client for `TCGDex` mapped onto the shared abstractions.
 
+### `Italbytz.Tcg.Scryfall`
+
+HTTP client for `Scryfall` mapped onto the shared abstractions for Magic: The Gathering.
+
 ### `Italbytz.Tcg.InMemory`
 
 In-memory repository implementations useful for tests, prototypes, and local caching.
@@ -37,7 +41,7 @@ In-memory repository implementations useful for tests, prototypes, and local cac
 
 - `Italbytz.Tcg.Sqlite`
 - `Italbytz.Tcg.EntityFramework`
-- `Italbytz.Tcg.Mtg`
+- `Italbytz.Tcg.MtgJson`
 
 ## Local validation
 
