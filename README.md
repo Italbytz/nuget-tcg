@@ -1,5 +1,7 @@
 # nuget-tcg
 
+[![Documentation](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue?style=for-the-badge)](https://italbytz.github.io/nuget-tcg/)
+
 `nuget-tcg` is a small foundation repository for reusable trading card game contracts and adapters.
 
 The initial scope is intentionally narrow:
@@ -43,10 +45,16 @@ In-memory repository implementations useful for tests, prototypes, and local cac
 - `Italbytz.Tcg.EntityFramework`
 - `Italbytz.Tcg.MtgJson`
 
+## Documentation
+
+- Product documentation: `https://italbytz.github.io/nuget-tcg/`
+
 ## Local validation
 
 ```bash
+dotnet tool restore
 dotnet restore nuget-tcg.sln
 dotnet test nuget-tcg.sln -v minimal
 dotnet pack nuget-tcg.sln -c Release -v minimal
+dotnet tool run docfx docfx/docfx.json
 ```
