@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\nuget-foundation\src\Italbytz.Common.Abstractions\Italbytz.Common.Abstractions.csproj" />
     <ProjectReference Include="..\Italbytz.Tcg.Abstractions\Italbytz.Tcg.Abstractions.csproj" />
   </ItemGroup>
 
