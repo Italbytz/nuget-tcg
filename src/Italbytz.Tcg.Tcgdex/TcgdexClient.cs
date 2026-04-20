@@ -3,28 +3,18 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Italbytz.Common.Http;
 using Italbytz.Tcg.Abstractions;
 
 namespace Italbytz.Tcg.Tcgdex;
 
-public sealed class TcgdexClient : ITcgCatalog, IDisposable
+public sealed class TcgdexClient : HttpJsonApiClientBase, ITcgCatalog
 {
-    private readonly HttpClient _httpClient;
-    private readonly bool _disposeHttpClient;
-    private readonly TcgdexOptions _options;
-    private readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     public TcgdexClient(HttpClient? httpClient = null, TcgdexOptions? options = null)
+        : base((options ?? new TcgdexOptions()).BaseUrl, httpClient)
     {
-        _httpClient = httpClient ?? new HttpClient();
-        _disposeHttpClient = httpClient is null;
-        _options = options ?? new TcgdexOptions();
     }
 
     public async Task<TcgPage<TcgCard>> SearchCardsAsync(TcgCardQuery query, CancellationToken cancellationToken = default)
@@ -80,45 +70,12 @@ public sealed class TcgdexClient : ITcgCatalog, IDisposable
         return set is null ? null : MapSet(set);
     }
 
-    public void Dispose()
-    {
-        if (_disposeHttpClient)
-        {
-            _httpClient.Dispose();
-        }
-    }
-
     private static void EnsurePokemonGame(string game)
     {
         if (!string.IsNullOrWhiteSpace(game) && !string.Equals(game, TcgGameIds.Pokemon, StringComparison.OrdinalIgnoreCase))
         {
             throw new NotSupportedException("TCGDex currently supports Pokemon only.");
         }
-    }
-
-    private string BuildPath(string resource, IDictionary<string, string> filters)
-    {
-        if (filters.Count == 0)
-        {
-            return resource;
-        }
-
-        var query = string.Join("&", filters.Select(filter => $"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}"));
-        return $"{resource}?{query}";
-    }
-
-    private async Task<T?> GetAsync<T>(string relativePath, CancellationToken cancellationToken)
-    {
-        var response = await _httpClient.GetAsync(BuildAbsoluteUri(relativePath), cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        return JsonSerializer.Deserialize<T>(json, _serializerOptions);
-    }
-
-    private string BuildAbsoluteUri(string relativePath)
-    {
-        return $"{_options.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
     }
 
     private static TcgCard MapCard(TcgdexCardDto card)
@@ -136,7 +93,7 @@ public sealed class TcgdexClient : ITcgCatalog, IDisposable
             Illustrator = card.Illustrator,
             SetId = card.Set?.Id,
             SetName = card.Set?.Name,
-            ImageUri = BuildImageUri(card.Image)
+            ImageUri = TcgClientMappingHelpers.BuildHighResolutionImageUri(card.Image)
         };
 
         if (card.Hp.HasValue)
@@ -166,9 +123,9 @@ public sealed class TcgdexClient : ITcgCatalog, IDisposable
             Name = set.Name ?? string.Empty,
             SeriesName = set.Serie?.Name,
             CardCount = set.CardCount?.Total,
-            ReleaseDate = ParseDate(set.ReleaseDate),
-            LogoUri = BuildImageUri(set.Logo),
-            SymbolUri = BuildImageUri(set.Symbol)
+            ReleaseDate = TcgClientMappingHelpers.ParseReleaseDate(set.ReleaseDate),
+            LogoUri = TcgClientMappingHelpers.BuildHighResolutionImageUri(set.Logo),
+            SymbolUri = TcgClientMappingHelpers.BuildHighResolutionImageUri(set.Symbol)
         };
 
         if (!string.IsNullOrWhiteSpace(set.TcgOnline))
@@ -177,33 +134,6 @@ public sealed class TcgdexClient : ITcgCatalog, IDisposable
         }
 
         return mappedSet;
-    }
-
-    private static Uri? BuildImageUri(string? image)
-    {
-        if (string.IsNullOrWhiteSpace(image))
-        {
-            return null;
-        }
-
-        var normalizedImage = image!;
-        var imagePath = normalizedImage.EndsWith("/high.png", StringComparison.OrdinalIgnoreCase)
-            ? normalizedImage
-            : normalizedImage.TrimEnd('/') + "/high.png";
-
-        return Uri.TryCreate(imagePath, UriKind.Absolute, out var imageUri) ? imageUri : null;
-    }
-
-    private static DateTimeOffset? ParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var releaseDate)
-            ? releaseDate
-            : null;
     }
 
     private sealed class TcgdexCardDto
