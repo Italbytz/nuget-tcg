@@ -3,29 +3,19 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Italbytz.Common.Http;
 using Italbytz.Tcg.Abstractions;
 
 namespace Italbytz.Tcg.Scryfall;
 
-public sealed class ScryfallClient : ITcgCatalog, IDisposable
+public sealed class ScryfallClient : HttpJsonApiClientBase, ITcgCatalog
 {
-    private readonly HttpClient _httpClient;
-    private readonly bool _disposeHttpClient;
-    private readonly ScryfallOptions _options;
-    private readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     public ScryfallClient(HttpClient? httpClient = null, ScryfallOptions? options = null)
+        : base((options ?? new ScryfallOptions()).BaseUrl, httpClient)
     {
-        _httpClient = httpClient ?? new HttpClient();
-        _disposeHttpClient = httpClient is null;
-        _options = options ?? new ScryfallOptions();
     }
 
     public async Task<TcgPage<TcgCard>> SearchCardsAsync(TcgCardQuery query, CancellationToken cancellationToken = default)
@@ -71,14 +61,6 @@ public sealed class ScryfallClient : ITcgCatalog, IDisposable
         return set is null ? null : MapSet(set);
     }
 
-    public void Dispose()
-    {
-        if (_disposeHttpClient)
-        {
-            _httpClient.Dispose();
-        }
-    }
-
     private static void EnsureMtgGame(string game)
     {
         if (!string.IsNullOrWhiteSpace(game) && !string.Equals(game, TcgGameIds.MagicTheGathering, StringComparison.OrdinalIgnoreCase))
@@ -104,31 +86,6 @@ public sealed class ScryfallClient : ITcgCatalog, IDisposable
         return parts.Count == 0 ? "game:paper" : string.Join(" ", parts);
     }
 
-    private string BuildPath(string resource, IDictionary<string, string> parameters)
-    {
-        if (parameters.Count == 0)
-        {
-            return resource;
-        }
-
-        var query = string.Join("&", parameters.Select(parameter => $"{Uri.EscapeDataString(parameter.Key)}={Uri.EscapeDataString(parameter.Value)}"));
-        return $"{resource}?{query}";
-    }
-
-    private async Task<T?> GetAsync<T>(string relativePath, CancellationToken cancellationToken)
-    {
-        var response = await _httpClient.GetAsync(BuildAbsoluteUri(relativePath), cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        return JsonSerializer.Deserialize<T>(json, _serializerOptions);
-    }
-
-    private string BuildAbsoluteUri(string relativePath)
-    {
-        return $"{_options.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
-    }
-
     private static TcgCard MapCard(ScryfallCardDto card)
     {
         var mappedCard = new TcgCard
@@ -142,7 +99,7 @@ public sealed class ScryfallClient : ITcgCatalog, IDisposable
             Rarity = card.Rarity,
             SetId = card.Set,
             SetName = card.SetName,
-            ImageUri = BuildImageUri(card.ImageUris?.Normal, card.ImageUris?.Large)
+            ImageUri = TcgClientMappingHelpers.BuildImageUri(card.ImageUris?.Normal, card.ImageUris?.Large)
         };
 
         if (!string.IsNullOrWhiteSpace(card.ManaCost))
@@ -170,9 +127,9 @@ public sealed class ScryfallClient : ITcgCatalog, IDisposable
             Game = TcgGameIds.MagicTheGathering,
             Id = set.Code ?? string.Empty,
             Name = set.Name ?? string.Empty,
-            ReleaseDate = ParseDate(set.ReleasedAt),
-            LogoUri = BuildImageUri(set.IconSvgUri, null),
-            SymbolUri = BuildImageUri(set.IconSvgUri, null)
+            ReleaseDate = TcgClientMappingHelpers.ParseReleaseDate(set.ReleasedAt),
+            LogoUri = TcgClientMappingHelpers.BuildImageUri(set.IconSvgUri),
+            SymbolUri = TcgClientMappingHelpers.BuildImageUri(set.IconSvgUri)
         };
 
         if (set.CardCount.HasValue)
@@ -186,24 +143,6 @@ public sealed class ScryfallClient : ITcgCatalog, IDisposable
         }
 
         return mappedSet;
-    }
-
-    private static Uri? BuildImageUri(string? preferred, string? fallback)
-    {
-        var candidate = !string.IsNullOrWhiteSpace(preferred) ? preferred : fallback;
-        return Uri.TryCreate(candidate, UriKind.Absolute, out var imageUri) ? imageUri : null;
-    }
-
-    private static DateTimeOffset? ParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var releaseDate)
-            ? releaseDate
-            : null;
     }
 
     private sealed class ScryfallListResponse<T>
